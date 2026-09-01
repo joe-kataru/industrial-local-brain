@@ -16,110 +16,99 @@
                 <h1 class="text-xl font-bold text-emerald-400">⚙️ INDUSTRIAL LOCAL BRAIN</h1>
                 <p class="text-xs text-slate-400">Running locally • Air-gapped compliance • Powered by Hermes 3</p>
             </div>
-            <!-- License Badge Status -->
             <span id="licenseBadge" class="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] px-2.5 py-1 rounded font-bold uppercase tracking-wider">
                 Unlicensed Edition
             </span>
         </div>
 
-        <!-- 🎟️ License Registration Panel -->
         <div id="licensePanel" class="bg-slate-950 p-4 border border-slate-800 rounded mt-4 mb-6">
             <h3 class="text-xs font-bold uppercase text-slate-300 mb-1">Activate Premium License</h3>
             <p class="text-xs text-slate-500 mb-3">No subscriptions. Pay $19 once, keep it forever.</p>
             <div class="flex gap-2">
-                <input id="licenseInput" type="text" placeholder="Paste your license key (e.g., BRAIN-PRO-999)" 
-                    class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500">
-                <button onclick="activateLicense()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-1.5 rounded font-bold border border-slate-700 transition">
-                    Activate
-                </button>
+                <input id="licenseInput" type="text" placeholder="Paste your license key (e.g., BRAIN-PRO-999)" class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500">
+                <button onclick="activateLicense()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-1.5 rounded font-bold border border-slate-700 transition">Activate</button>
             </div>
             <p id="licenseMsg" class="text-[11px] mt-2 hidden"></p>
         </div>
         
         <div class="space-y-4 opacity-50 pointer-events-none" id="mainWorkflow">
-            <div>
+            <!-- Mode Selector Switch Toggle -->
+            <div class="flex border border-slate-800 rounded bg-slate-950 p-1 text-xs">
+                <button id="modeLocal" onclick="setMode('local')" class="flex-1 bg-emerald-500 text-slate-950 font-bold py-1.5 rounded transition">🪵 OFFLINE LOCAL DIRECTORY</button>
+                <button id="modeWeb" onclick="setMode('web')" class="flex-1 text-slate-400 py-1.5 rounded transition">🌐 WEB LINK SCRAPER</button>
+            </div>
+
+            <div id="urlContainer" class="hidden">
                 <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Documentation URL</label>
-                <input id="urlInput" type="url" placeholder="https://wikipedia.org" 
-                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                <input id="urlInput" type="url" placeholder="https://wikipedia.org" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
             </div>
             
+            <div id="localIndicator" class="bg-slate-950/50 p-3 border border-slate-800/60 border-dashed rounded text-xs text-slate-400">
+                📁 Currently scanning repository path: <span class="text-emerald-400 font-bold">data/manuals/</span>
+            </div>
+
             <div>
                 <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Analytic Question</label>
-                <input id="questionInput" type="text" placeholder="What are the key types of waste?" 
-                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                <input id="questionInput" type="text" placeholder="How do I fix error code E-44 on the air dryer?" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
             </div>
             
-            <button id="submitBtn" onclick="runAnalysis()" 
-                class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded transition text-sm">
-                RUN ANALYSIS ENGINE (REQUIRES LICENSE)
+            <button id="submitBtn" onclick="runAnalysis()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded transition text-sm">
+                RUN ANALYSIS ENGINE
             </button>
         </div>
 
         <div id="outputContainer" class="hidden mt-6 pt-6 border-t border-slate-800">
-            <h3 id="sourceTitle" class="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-2"></h3>
+            <h3 id="sourceTitle" class="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-2">Analysis Results</h3>
             <div id="outputText" class="bg-slate-950 p-4 border border-slate-800 rounded text-sm leading-relaxed whitespace-pre-wrap text-slate-300"></div>
         </div>
     </div>
 
     <script>
-        // Check for saved license key on launch
+        let appMode = 'local';
         let savedKey = localStorage.getItem('industrial_license_key') || '';
-        if (savedKey) {
-            document.getElementById('licenseInput').value = savedKey;
-            checkInitialLicense(savedKey);
+        if (savedKey) { document.getElementById('licenseInput').value = savedKey; checkInitialLicense(savedKey); }
+
+        function setMode(mode) {
+            appMode = mode;
+            const locBtn = document.getElementById('modeLocal');
+            const webBtn = document.getElementById('modeWeb');
+            const urlBox = document.getElementById('urlContainer');
+            const fileBox = document.getElementById('localIndicator');
+
+            if(mode === 'local') {
+                locBtn.className = "flex-1 bg-emerald-500 text-slate-950 font-bold py-1.5 rounded transition";
+                webBtn.className = "flex-1 text-slate-400 py-1.5 rounded transition";
+                urlBox.classList.add('hidden');
+                fileBox.classList.remove('hidden');
+            } else {
+                webBtn.className = "flex-1 bg-emerald-500 text-slate-950 font-bold py-1.5 rounded transition";
+                locBtn.className = "flex-1 text-slate-400 py-1.5 rounded transition";
+                urlBox.classList.remove('hidden');
+                fileBox.classList.add('hidden');
+            }
         }
 
         async function checkInitialLicense(key) {
-            try {
-                const res = await fetch('/api/verify-license', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ licenseKey: key })
-                });
-                const data = await res.json();
-                if (data.valid) unlockApp(key);
-            } catch(e) {}
+            try { const res = await fetch('/api/verify-license', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licenseKey: key }) }); const data = await res.json(); if (data.valid) unlockApp(key); } catch(e) {}
         }
 
         async function activateLicense() {
             const key = document.getElementById('licenseInput').value;
             const msg = document.getElementById('licenseMsg');
             if(!key) return;
-
-            msg.classList.remove('hidden', 'text-red-400', 'text-emerald-400');
-            msg.innerText = "Checking license key...";
-
             try {
-                const response = await fetch('/api/verify-license', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ licenseKey: key })
-                });
+                const response = await fetch('/api/verify-license', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ licenseKey: key }) });
                 const data = await response.json();
-                
-                if (data.valid) {
-                    msg.innerText = "Success! Premium core unlocked.";
-                    msg.classList.add('text-emerald-400');
-                    localStorage.setItem('industrial_license_key', key);
-                    unlockApp(key);
-                }
-            } catch (err) {
-                msg.innerText = "Invalid activation key. Access denied.";
-                msg.classList.add('text-red-400');
-            }
+                if (data.valid) { localStorage.setItem('industrial_license_key', key); unlockApp(key); }
+            } catch (err) { msg.innerText = "Invalid activation key."; msg.classList.add('text-red-400'); msg.classList.remove('hidden'); }
         }
 
         function unlockApp(key) {
             document.getElementById('licensePanel').classList.add('hidden');
-            const workflow = document.getElementById('mainWorkflow');
-            workflow.classList.remove('opacity-50', 'pointer-events-none');
-            
+            document.getElementById('mainWorkflow').classList.remove('opacity-50', 'pointer-events-none');
             const badge = document.getElementById('licenseBadge');
             badge.innerText = "Premium Lifetime Active";
-            badge.classList.remove('bg-red-500/10', 'border-red-500/30', 'text-red-400');
-            badge.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400');
-            
-            document.getElementById('submitBtn').innerText = "RUN ANALYSIS ENGINE";
+            badge.className = "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] px-2.5 py-1 rounded font-bold uppercase tracking-wider";
         }
 
         async function runAnalysis() {
@@ -128,37 +117,24 @@
             const btn = document.getElementById('submitBtn');
             const outputContainer = document.getElementById('outputContainer');
             const outputText = document.getElementById('outputText');
-            const sourceTitle = document.getElementById('sourceTitle');
             const currentLicense = localStorage.getItem('industrial_license_key') || '';
 
-            if (!url || !question) return alert('Please enter both a URL and a question.');
+            if (appMode === 'web' && !url) return alert('URL required.');
+            if (!question) return alert('Question required.');
 
-            btn.disabled = true;
-            btn.innerText = 'SCRAPING & PROCESSING WITH AI...';
+            btn.disabled = true; btn.innerText = 'PROCESSING OFFLINE AI INTEL...';
             outputContainer.classList.add('hidden');
 
+            const endpoint = appMode === 'local' ? '/api/analyze-local' : '/api/analyze-link';
+            const bodyPayload = appMode === 'local' ? { question, licenseKey: currentLicense } : { url, question, licenseKey: currentLicense };
+
             try {
-                const response = await fetch('/api/analyze-link', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, question, licenseKey: currentLicense })
-                });
+                const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) });
                 const data = await response.json();
-                
-                if (data.error) {
-                    outputText.innerText = "Access Blocked: " + data.error;
-                } else {
-                    sourceTitle.innerText = "Source Found: " + data.source_title;
-                    outputText.innerText = data.reply;
-                }
+                outputText.innerText = data.error ? "Error: " + data.error : data.reply;
                 outputContainer.classList.remove('hidden');
-            } catch (err) {
-                outputText.innerText = "Processing error.";
-                outputContainer.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'RUN ANALYSIS ENGINE';
-            }
+            } catch (err) { outputText.innerText = "Processing error."; outputContainer.classList.remove('hidden'); }
+            finally { btn.disabled = false; btn.innerText = 'RUN ANALYSIS ENGINE'; }
         }
     </script>
 </body>
