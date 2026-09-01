@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Brain Terminal</title>
+    <script src="https://tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: monospace; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-6">
+    <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
+        <h1 class="text-xl font-bold text-emerald-400 mb-2">⚙️ INDUSTRIAL LOCAL BRAIN</h1>
+        <p class="text-xs text-slate-400 mb-6">Running locally • Air-gapped compliance • Powered by Hermes 3</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Documentation URL</label>
+                <input id="urlInput" type="url" placeholder="https://wikipedia.org" 
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+            </div>
+            
+            <div>
+                <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Analytic Question</label>
+                <input id="questionInput" type="text" placeholder="What are the key types of waste?" 
+                    class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+            </div>
+            
+            <button id="submitBtn" onclick="runAnalysis()" 
+                class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded transition text-sm">
+                RUN ANALYSIS ENGINE
+            </button>
+        </div>
+
+        <div id="outputContainer" class="hidden mt-6 pt-6 border-t border-slate-800">
+            <h3 id="sourceTitle" class="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-2"></h3>
+            <div id="outputText" class="bg-slate-950 p-4 border border-slate-800 rounded text-sm leading-relaxed whitespace-pre-wrap text-slate-300"></div>
+        </div>
+    </div>
+
+    <script>
+        async function runAnalysis() {
+            const url = document.getElementById('urlInput').value;
+            const question = document.getElementById('questionInput').value;
+            const btn = document.getElementById('submitBtn');
+            const outputContainer = document.getElementById('outputContainer');
+            const outputText = document.getElementById('outputText');
+            const sourceTitle = document.getElementById('sourceTitle');
+
+            if (!url || !question) return alert('Please enter both a URL and a question.');
+
+            btn.disabled = true;
+            btn.innerText = 'SCRAPING & PROCESSING WITH AI...';
+            outputContainer.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/analyze-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, question })
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    outputText.innerText = "Error: " + data.error;
+                } else {
+                    sourceTitle.innerText = "Source Found: " + data.source_title;
+                    outputText.innerText = data.reply;
+                }
+                outputContainer.classList.remove('hidden');
+            } catch (err) {
+                outputText.innerText = "Failed to run processing.";
+                outputContainer.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'RUN ANALYSIS ENGINE';
+            }
+        }
+    </script>
+</body>
+</html>
