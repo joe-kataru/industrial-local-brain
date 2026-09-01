@@ -11,10 +11,32 @@
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-6">
     <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl">
-        <h1 class="text-xl font-bold text-emerald-400 mb-2">⚙️ INDUSTRIAL LOCAL BRAIN</h1>
-        <p class="text-xs text-slate-400 mb-6">Running locally • Air-gapped compliance • Powered by Hermes 3</p>
+        <div class="flex justify-between items-start mb-2">
+            <div>
+                <h1 class="text-xl font-bold text-emerald-400">⚙️ INDUSTRIAL LOCAL BRAIN</h1>
+                <p class="text-xs text-slate-400">Running locally • Air-gapped compliance • Powered by Hermes 3</p>
+            </div>
+            <!-- License Badge Status -->
+            <span id="licenseBadge" class="bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] px-2.5 py-1 rounded font-bold uppercase tracking-wider">
+                Unlicensed Edition
+            </span>
+        </div>
+
+        <!-- 🎟️ License Registration Panel -->
+        <div id="licensePanel" class="bg-slate-950 p-4 border border-slate-800 rounded mt-4 mb-6">
+            <h3 class="text-xs font-bold uppercase text-slate-300 mb-1">Activate Premium License</h3>
+            <p class="text-xs text-slate-500 mb-3">No subscriptions. Pay $19 once, keep it forever.</p>
+            <div class="flex gap-2">
+                <input id="licenseInput" type="text" placeholder="Paste your license key (e.g., BRAIN-PRO-999)" 
+                    class="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500">
+                <button onclick="activateLicense()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-1.5 rounded font-bold border border-slate-700 transition">
+                    Activate
+                </button>
+            </div>
+            <p id="licenseMsg" class="text-[11px] mt-2 hidden"></p>
+        </div>
         
-        <div class="space-y-4">
+        <div class="space-y-4 opacity-50 pointer-events-none" id="mainWorkflow">
             <div>
                 <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1">Documentation URL</label>
                 <input id="urlInput" type="url" placeholder="https://wikipedia.org" 
@@ -29,7 +51,7 @@
             
             <button id="submitBtn" onclick="runAnalysis()" 
                 class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded transition text-sm">
-                RUN ANALYSIS ENGINE
+                RUN ANALYSIS ENGINE (REQUIRES LICENSE)
             </button>
         </div>
 
@@ -40,6 +62,66 @@
     </div>
 
     <script>
+        // Check for saved license key on launch
+        let savedKey = localStorage.getItem('industrial_license_key') || '';
+        if (savedKey) {
+            document.getElementById('licenseInput').value = savedKey;
+            checkInitialLicense(savedKey);
+        }
+
+        async function checkInitialLicense(key) {
+            try {
+                const res = await fetch('/api/verify-license', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ licenseKey: key })
+                });
+                const data = await res.json();
+                if (data.valid) unlockApp(key);
+            } catch(e) {}
+        }
+
+        async function activateLicense() {
+            const key = document.getElementById('licenseInput').value;
+            const msg = document.getElementById('licenseMsg');
+            if(!key) return;
+
+            msg.classList.remove('hidden', 'text-red-400', 'text-emerald-400');
+            msg.innerText = "Checking license key...";
+
+            try {
+                const response = await fetch('/api/verify-license', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ licenseKey: key })
+                });
+                const data = await response.json();
+                
+                if (data.valid) {
+                    msg.innerText = "Success! Premium core unlocked.";
+                    msg.classList.add('text-emerald-400');
+                    localStorage.setItem('industrial_license_key', key);
+                    unlockApp(key);
+                }
+            } catch (err) {
+                msg.innerText = "Invalid activation key. Access denied.";
+                msg.classList.add('text-red-400');
+            }
+        }
+
+        function unlockApp(key) {
+            document.getElementById('licensePanel').classList.add('hidden');
+            const workflow = document.getElementById('mainWorkflow');
+            workflow.classList.remove('opacity-50', 'pointer-events-none');
+            
+            const badge = document.getElementById('licenseBadge');
+            badge.innerText = "Premium Lifetime Active";
+            badge.classList.remove('bg-red-500/10', 'border-red-500/30', 'text-red-400');
+            badge.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400');
+            
+            document.getElementById('submitBtn').innerText = "RUN ANALYSIS ENGINE";
+        }
+
         async function runAnalysis() {
             const url = document.getElementById('urlInput').value;
             const question = document.getElementById('questionInput').value;
@@ -47,6 +129,7 @@
             const outputContainer = document.getElementById('outputContainer');
             const outputText = document.getElementById('outputText');
             const sourceTitle = document.getElementById('sourceTitle');
+            const currentLicense = localStorage.getItem('industrial_license_key') || '';
 
             if (!url || !question) return alert('Please enter both a URL and a question.');
 
@@ -58,19 +141,19 @@
                 const response = await fetch('/api/analyze-link', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, question })
+                    body: JSON.stringify({ url, question, licenseKey: currentLicense })
                 });
                 const data = await response.json();
                 
                 if (data.error) {
-                    outputText.innerText = "Error: " + data.error;
+                    outputText.innerText = "Access Blocked: " + data.error;
                 } else {
                     sourceTitle.innerText = "Source Found: " + data.source_title;
                     outputText.innerText = data.reply;
                 }
                 outputContainer.classList.remove('hidden');
             } catch (err) {
-                outputText.innerText = "Failed to run processing.";
+                outputText.innerText = "Processing error.";
                 outputContainer.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
